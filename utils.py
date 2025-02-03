@@ -83,17 +83,21 @@ def download_file(url):
 def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tqdm=True)):
 
     model_id_lower = model_id.lower()
+    is_xl = any(keyword in model_id_lower for keyword in ["sd-xl", "sdxl", "xl", "illustrious"])
     del pipe
     torch.cuda.empty_cache()
     gc.collect()
-    if model_id.startswith("http"):
-        model_path = download_file(model_id)
+    if model_id.startswith(("http://", "https://")):        
         try :
-            pipe = StableDiffusionXLPipeline.from_single_file(model_path, torch_dtype=torch.float16)
+            download_model = download_file(model_id)
+            model_path = download_model.split("/")[-1]
+            is_xl = any(keyword in model_path for keyword in ["sd-xl", "sdxl", "xl", "illustrious"])
+            pipeline_class = StableDiffusionXLPipeline if is_xl else StableDiffusionPipeline
+            pipe = pipeline_class.from_single_file(model_path, torch_dtype=torch.float16, safety_checker=None if verify_token() else True)
         except:
-            pipe = StableDiffusionPipeline.from_single_file(model_path, torch_dtype=torch.float16, safety_checker=None if verify_token() else True,)
+            gr.Error(f"Model loading failed")
     
-    if "sd-xl" in model_id_lower or "sdxl" in model_id_lower or "xl" in model_id_lower:
+    if is_xl:
         gr.Info("wait a minute the model is loading!")
         progress(0.2, desc="Starting model loading")
         time.sleep(1)
