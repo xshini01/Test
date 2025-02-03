@@ -89,9 +89,9 @@ def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tq
     if model_id.startswith("http"):
         model_path = download_file(model_id)
         try :
-            pipe = StableDiffusionXLPipeline.from_single_file(model_path)
+            pipe = StableDiffusionXLPipeline.from_single_file(model_path, torch_dtype=torch.float16)
         except:
-            pipe = StableDiffusionPipeline.from_single_file(model_path)
+            pipe = StableDiffusionPipeline.from_single_file(model_path, torch_dtype=torch.float16, safety_checker=None if verify_token() else True,)
     
     if "sd-xl" in model_id_lower or "sdxl" in model_id_lower or "xl" in model_id_lower:
         gr.Info("wait a minute the model is loading!")
