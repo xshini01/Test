@@ -91,11 +91,11 @@ def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tq
         try :
             download_model = download_file(model_id)
             model_path = download_model.split("/")[-1]
-            is_xl = any(keyword in model_path for keyword in ["sd-xl", "sdxl", "xl", "illustrious"])
+            is_xl = any(keyword in model_path.lower() for keyword in ["sd-xl", "sdxl", "xl", "illustrious"])
             pipeline_class = StableDiffusionXLPipeline if is_xl else StableDiffusionPipeline
             pipe = pipeline_class.from_single_file(model_path, torch_dtype=torch.float16, safety_checker=None if verify_token() else True)
         except:
-            gr.Error(f"Model loading failed")
+            print(f"Model loading failed")
     
     if is_xl:
         gr.Info("wait a minute the model is loading!")
@@ -107,7 +107,7 @@ def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tq
             torch_dtype=torch.float16,
             token=hf_token if hf_token else None
         )
-    else:
+    if not is_xl and not model_id.startswith(("http://", "https://")):
         gr.Info("wait a minute the model is loading!")
         progress(0.2, desc="Starting model loading")
         pipe = StableDiffusionPipeline.from_pretrained(
@@ -117,6 +117,14 @@ def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tq
             torch_dtype=torch.float16,
             token=hf_token if hf_token else None
         )
+    else:
+        print("coba paksa sdxl")
+        directory = "/content/stable-diffusion/models/"
+        files = [f for f in os.listdir(directory) if f.endswith(".safetensors")]
+        print(files)
+        model = directory+files
+        print(model)
+        pipe = StableDiffusionXLPipeline.from_single_file(model, torch_dtype=torch.float16)
     pipe.enable_xformers_memory_efficient_attention()
 
     if lora_id:
