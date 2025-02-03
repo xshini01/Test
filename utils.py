@@ -112,7 +112,7 @@ def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tq
         directory = "/content/stable-diffusion/models/"
         files = [f for f in os.listdir(directory) if f.endswith(".safetensors")]
         print(files)
-        model = directory+files
+        model = f"/content/stable-diffusion/models/{files}"
         print(model)
         pipe = StableDiffusionXLPipeline.from_single_file(model, torch_dtype=torch.float16)
     pipe.enable_xformers_memory_efficient_attention()
