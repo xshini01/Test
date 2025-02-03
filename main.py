@@ -186,7 +186,6 @@ def main():
             ], 
             outputs= image_output
         )
-        clear_output()
         ui.queue() 
         ui.launch(share=True, inline=False, debug=True)
 
