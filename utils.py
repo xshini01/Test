@@ -164,12 +164,10 @@ def verify_token():
     stored_hash = b'$2b$12$o.DA9bq6AOg.jL4848kIvu5oy2K/2Qs35dWENbi/p8yDQQH2epmZy'
     try:
         my_token = userdata.get('my_token')
-    except userdata.SecretNotFoundError:
+    except userdata.SecretNotFoundError or userdata.NotebookAccessError:
         return False
-
     if my_token is None:
-        return False 
-        
+        return False      
     return bcrypt.checkpw(my_token.encode('utf-8'), stored_hash)
         
     
