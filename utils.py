@@ -148,14 +148,16 @@ def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tq
     return pipe, model_id, lora_id, generate_imgs, generated_imgs_with_tags
 
 def verify_token(): 
-    my_token = userdata.get('my_token')
     stored_hash = b'$2b$12$o.DA9bq6AOg.jL4848kIvu5oy2K/2Qs35dWENbi/p8yDQQH2epmZy'
-    if my_token is None:
-        print("my_token is not set in the environment variables.")
+    try:
+        my_token = userdata.get('my_token')
+    except userdata.SecretNotFoundError:
         return False
-    if bcrypt.checkpw(my_token.encode('utf-8'), stored_hash): 
-        return True  
-    return False
+
+    if my_token is None:
+        return False 
+        
+    return bcrypt.checkpw(my_token.encode('utf-8'), stored_hash)
         
     
 # set scheduler 
