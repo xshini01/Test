@@ -96,7 +96,8 @@ def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tq
             pipe = pipeline_class.from_single_file(model_path, torch_dtype=torch.float16, safety_checker=None if verify_token() else True)
         except:
             print(f"Model loading failed")
-    
+
+    print(f"ini nilai is_xl: {is_xl}")
     if is_xl:
         gr.Info("wait a minute the model is loading!")
         progress(0.2, desc="Starting model loading")
