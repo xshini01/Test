@@ -86,41 +86,33 @@ def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tq
     del pipe
     torch.cuda.empty_cache()
     gc.collect()
-    model_path = None
     if model_id.startswith("http"):
         model_path = download_file(model_id)
-    try:
-        if "sd-xl" in model_id_lower or "sdxl" in model_id_lower or "xl" in model_id_lower:
-            gr.Info("wait a minute the model is loading!")
-            progress(0.2, desc="Starting model loading")
-            time.sleep(1)
-            pipe = StableDiffusionXLPipeline.from_pretrained(
-                model_id,
-                cache_dir="/content/stable-diffusion/models",
-                torch_dtype=torch.float16,
-                token=hf_token if hf_token else None
-            )
-            # Jika ada model_path, coba load dari file
-        if model_path:
+        try :
             pipe = StableDiffusionXLPipeline.from_single_file(model_path)
-        else:
-            # Jika bukan SDXL, coba load dengan pipeline SD biasa
-            if model_path:
-                try:
-                    pipe = StableDiffusionPipeline.from_single_file(model_path)
-                except:
-                    gr.Info(f"Error loading model from file: {e}. Loading from pretrained instead.")
-                    progress(0.2, desc="Starting model loading")
-                    pipe = StableDiffusionPipeline.from_pretrained(
-                        model_id,
-                        cache_dir="/content/stable-diffusion/models",
-                        safety_checker=None if verify_token() else True,
-                        torch_dtype=torch.float16,
-                        token=hf_token if hf_token else None
-                    )
-    except Exception as e:
-        gr.Info(f"An error occurred: {e}")
-        return None
+        except:
+            pipe = StableDiffusionPipeline.from_single_file(model_path)
+    
+    if "sd-xl" in model_id_lower or "sdxl" in model_id_lower or "xl" in model_id_lower:
+        gr.Info("wait a minute the model is loading!")
+        progress(0.2, desc="Starting model loading")
+        time.sleep(1)
+        pipe = StableDiffusionXLPipeline.from_pretrained(
+            model_id,
+            cache_dir="/content/stable-diffusion/models",
+            torch_dtype=torch.float16,
+            token=hf_token if hf_token else None
+        )
+    else:
+        gr.Info("wait a minute the model is loading!")
+        progress(0.2, desc="Starting model loading")
+        pipe = StableDiffusionPipeline.from_pretrained(
+            model_id,
+            cache_dir="/content/stable-diffusion/models",
+            safety_checker=None if verify_token() else True,
+            torch_dtype=torch.float16,
+            token=hf_token if hf_token else None
+        )
     pipe.enable_xformers_memory_efficient_attention()
 
     if lora_id:
