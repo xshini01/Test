@@ -7,8 +7,6 @@ import requests
 import models
 from tqdm import tqdm
 import bcrypt
-from safetensors.torch import load_file
-import json
 from google.colab import userdata
 from diffusers import StableDiffusionPipeline, StableDiffusionXLPipeline, DPMSolverMultistepScheduler
 from transformers import AutoTokenizer, AutoModelForCausalLM
