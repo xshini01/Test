@@ -102,22 +102,11 @@ def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tq
         gr.Info("wait a minute the model is loading!")
         progress(0.2, desc="Starting model loading")
         time.sleep(1)
-        pipe = StableDiffusionXLPipeline.from_pretrained(
-            model_id,
-            cache_dir="/content/stable-diffusion/models",
-            torch_dtype=torch.float16,
-            token=hf_token if hf_token else None
-        )
+        pipe = StableDiffusionXLPipeline.from_pretrained(model_id,cache_dir="/content/stable-diffusion/models",torch_dtype=torch.float16,token=hf_token if hf_token else None)
     if not is_xl and not model_id.startswith(("http://", "https://")):
         gr.Info("wait a minute the model is loading!")
         progress(0.2, desc="Starting model loading")
-        pipe = StableDiffusionPipeline.from_pretrained(
-            model_id,
-            cache_dir="/content/stable-diffusion/models",
-            safety_checker=None if verify_token() else True,
-            torch_dtype=torch.float16,
-            token=hf_token if hf_token else None
-        )
+        pipe = StableDiffusionPipeline.from_pretrained(model_id, cache_dir="/content/stable-diffusion/models", safety_checker=None if verify_token() else True, torch_dtype=torch.float16, token=hf_token if hf_token else None)
     else:
         print("coba paksa sdxl")
         directory = "/content/stable-diffusion/models/"
