@@ -1,5 +1,4 @@
 diffusers
-torch==2.5.1
 transformers
 accelerate
 compel
