@@ -87,59 +87,78 @@ def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tq
     del pipe
     torch.cuda.empty_cache()
     gc.collect()
-    if model_id.startswith(("http://", "https://")):        
-        try :
-            download_model = download_file(model_id)
-            model_path = download_model.split("/")[-1]
-            is_xl = any(keyword in model_path.lower() for keyword in ["sd-xl", "sdxl", "xl", "illustrious"])
-            pipeline_class = StableDiffusionXLPipeline if is_xl else StableDiffusionPipeline
-            pipe = pipeline_class.from_single_file(model_path, torch_dtype=torch.float16, safety_checker=None if verify_token() else True)
-        except:
-            print(f"Model loading failed")
+    try:
+        # Handle URL model
+        if model_id.startswith(("http://", "https://")):
+            gr.Info("Downloading model...")
+            progress(0.1, desc="Downloading model")
+            
+            download_path = download_file(model_id)
+            model_name = os.path.basename(download_path)
+            check_xl = any(keyword in model_name.lower() for keyword in ["sd-xl", "sdxl", "xl", "illustrious"])
+            
+            pipeline_class = StableDiffusionXLPipeline if check_xl else StableDiffusionPipeline
+            pipe = pipeline_class.from_single_file(
+                download_path,
+                torch_dtype=torch.float16,
+                safety_checker=None if verify_token() else True,
+                token=hf_token or None
+            )
 
-    print(f"ini nilai is_xl: {is_xl}")
-    if is_xl:
-        gr.Info("wait a minute the model is loading!")
-        progress(0.2, desc="Starting model loading")
-        time.sleep(1)
-        pipe = StableDiffusionXLPipeline.from_pretrained(model_id,cache_dir="/content/stable-diffusion/models",torch_dtype=torch.float16,token=hf_token if hf_token else None)
-    if not is_xl and not model_id.startswith(("http://", "https://")):
-        gr.Info("wait a minute the model is loading!")
-        progress(0.2, desc="Starting model loading")
-        pipe = StableDiffusionPipeline.from_pretrained(model_id, cache_dir="/content/stable-diffusion/models", safety_checker=None if verify_token() else True, torch_dtype=torch.float16, token=hf_token if hf_token else None)
-    else:
-        print("coba paksa sdxl")
-        directory = "/content/stable-diffusion/models/"
-        files = [f for f in os.listdir(directory) if f.endswith(".safetensors")]
-        print(files)
-        model = f"/content/stable-diffusion/models/{files}"
-        print(model)
-        pipe = StableDiffusionXLPipeline.from_single_file(model, torch_dtype=torch.float16)
-    pipe.enable_xformers_memory_efficient_attention()
+        # Handle local SDXL model
+        elif is_xl:
+            gr.Info("Loading SDXL model...")
+            progress(0.2, desc="Loading SDXL model")
+            
+            pipe = StableDiffusionXLPipeline.from_pretrained(
+                model_id,
+                cache_dir="/content/stable-diffusion/models",
+                torch_dtype=torch.float16,
+                token=hf_token or None,
+                safety_checker=None if verify_token() else True
+            )
 
-    if lora_id:
-        try:
-            gr.Info("wait a minute the Lora is loading!")
-            progress(0.5, desc="Load LoRA weight")
-            pipe.load_lora_weights(lora_id, adapter_name=lora_id)
-            pipe.fuse_lora(lora_scale=0.7)
-            gr.Info(f"Load LoRA {lora_id} Success")
-        except Exception as e:
-            gr.Info(f"LoRA {lora_id} not compatible with model {model_id}")
-            gr.Info(f"Use another Lora, if sdxl model use Lora xl")
-            gr.Info(f"Load Model without LoRA")
-    else:
-        print(f"without lora")
+        # Handle standard Stable Diffusion model
+        else:
+            gr.Info("Loading standard model...")
+            progress(0.2, desc="Loading standard model")
+            
+            pipe = StableDiffusionPipeline.from_pretrained(
+                model_id,
+                cache_dir="/content/stable-diffusion/models",
+                torch_dtype=torch.float16,
+                token=hf_token or None,
+                safety_checker=None if verify_token() else True
+            )
 
-    pipe = pipe.to("cuda")
-    gr.Info(f"Load Model {model_id} and {lora_id} Success")
-    progress(1, desc="Model loaded successfully")
-    generate_imgs = gr.Button(interactive=True)
-    generated_imgs_with_tags = gr.Button()
-    clear_output()
-    if btn_check:
-        generated_imgs_with_tags = gr.Button(interactive=True)
-    return pipe, model_id, lora_id, generate_imgs, generated_imgs_with_tags
+        # Enable memory optimizations
+        pipe.enable_xformers_memory_efficient_attention()
+
+        # Load LoRA weights
+        if lora_id:
+            try:
+                gr.Info("Loading LoRA...")
+                progress(0.5, desc="Loading LoRA")
+                
+                pipe.load_lora_weights(lora_id, adapter_name=lora_id)
+                pipe.fuse_lora(lora_scale=0.7)
+                gr.Info(f"LoRA {lora_id} loaded successfully")
+            except Exception as e:
+                gr.Warning(f"LoRA Error: {str(e)}")
+                gr.Info("Proceeding without LoRA")
+
+        # Move to GPU
+        pipe = pipe.to("cuda")
+        gr.Info(f"Load Model {model_id} and {lora_id} Success")
+        progress(1, desc="Model loaded successfully")
+        generate_imgs = gr.Button(interactive=True)
+        generated_imgs_with_tags = gr.Button()
+        clear_output()
+        if btn_check:
+            generated_imgs_with_tags = gr.Button(interactive=True)
+        return pipe, model_id, lora_id, generate_imgs, generated_imgs_with_tags
+    except Exception as e :
+        gr.Warning(f"Loading Failed: {str(e)}")
 
 def verify_token(): 
     stored_hash = b'$2b$12$o.DA9bq6AOg.jL4848kIvu5oy2K/2Qs35dWENbi/p8yDQQH2epmZy'
