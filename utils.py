@@ -147,7 +147,7 @@ def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tq
             gr.Info("Proceeding without LoRA")
 
     # Move to GPU
-    pipe.enable_xformers_memory_efficient_attention()
+    pipe = pipe.enable_xformers_memory_efficient_attention()
     pipe = pipe.to("cuda")
     gr.Info(f"Load Model {model_id} and {lora_id} Success")
     progress(1, desc="Model loaded successfully")
