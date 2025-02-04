@@ -42,9 +42,10 @@ def is_sdxl(model_path):
 def clip_skip_visibility(model_id):
     if is_sdxl(model_id.lower()):
         return gr.update(visible=False)
-    if model_name is not None and is_sdxl(model_name.lower()):
+    elif model_name is not None and is_sdxl(model_name.lower()):
         return gr.update(visible=False)
-    return gr.update(visible=True)
+    else :
+        return gr.update(visible=True)
     
 def download_file(url):
     save_dir="/content/stable-diffusion/models"
@@ -70,6 +71,7 @@ def download_file(url):
             filename = f"model_{model_id}.safetensors"
         
         # Simpan file dengan nama asli
+        clip_skip_visibility(filename)
         file_path = os.path.join(save_dir, filename)
         with open(file_path, "wb") as file:
             for chunk in response.iter_content(chunk_size=8192):
@@ -87,10 +89,10 @@ def download_file(url):
 # load Model and Lora
 def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tqdm=True)):
     global model_name
-
-    del pipe
-    torch.cuda.empty_cache()
-    gc.collect()
+    if pipe :
+        del pipe
+        torch.cuda.empty_cache()
+        gc.collect()
     try:
         # Handle URL model
         if model_id.startswith(("http://", "https://")):
