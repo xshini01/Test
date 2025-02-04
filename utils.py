@@ -248,7 +248,7 @@ def generated_imgs(model_id, prompt, negative_prompt, scheduler_name, type_predi
     pipe.scheduler = set_scheduler(scheduler_name, pipe.scheduler.config, scheduler_args)
 
     for _ in range(num_images):
-       if is_sdxl(model_id.lower()) or (model_name is not None and is_sdxl(model_name.lower())):
+        if is_sdxl(model_id.lower()) or (model_name is not None and is_sdxl(model_name.lower())):
             compel = Compel(
                 tokenizer=[pipe.tokenizer, pipe.tokenizer_2],
                 text_encoder=[pipe.text_encoder, pipe.text_encoder_2],
