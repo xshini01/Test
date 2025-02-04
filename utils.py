@@ -76,10 +76,12 @@ def download_file(url):
                 file.write(chunk)
                 progress.update(len(chunk))
         progress.close()
-        print(f"File berhasil diunduh: {file_path}")
         return file_path
     else:
-        print(f"Gagal mengunduh file. Kode status: {response.status_code}")
+        if response.status_code == 401 :
+            gr.Error("Failed to download file. Please input civitai tokens")
+        else :
+            gr.Error(f"Failed to download file. status code status: {response.status_code}")
         return None
 
 # load Model and Lora
@@ -131,32 +133,32 @@ def load_model(model_id, lora_id, btn_check, pipe, progress=gr.Progress(track_tq
                 token=hf_token or None,
                 safety_checker=None if verify_token() else True
             )
+    
+        if lora_id:
+            try:
+                gr.Info("Loading LoRA...")
+                progress(0.5, desc="Loading LoRA")
+                
+                pipe.load_lora_weights(lora_id, adapter_name=lora_id)
+                pipe.fuse_lora(lora_scale=0.7)
+                gr.Info(f"LoRA {lora_id} loaded successfully")
+            except Exception as e:
+                gr.Warning(f"LoRA Error: {str(e)}")
+                gr.Info("Proceeding without LoRA")
+
+        # Move to GPU
+        pipe = pipe.enable_xformers_memory_efficient_attention()
+        pipe = pipe.to("cuda")
+        gr.Info(f"Load Model {model_id} and {lora_id} Success")
+        progress(1, desc="Model loaded successfully")
+        generate_imgs = gr.Button(interactive=True)
+        generated_imgs_with_tags = gr.Button()
+        clear_output()
+        if btn_check:
+            generated_imgs_with_tags = gr.Button(interactive=True)
+        return pipe, model_id, lora_id, generate_imgs, generated_imgs_with_tags
     except Exception as e :
         gr.Warning(f"Loading Failed: {str(e)}")
-    
-    if lora_id:
-        try:
-            gr.Info("Loading LoRA...")
-            progress(0.5, desc="Loading LoRA")
-            
-            pipe.load_lora_weights(lora_id, adapter_name=lora_id)
-            pipe.fuse_lora(lora_scale=0.7)
-            gr.Info(f"LoRA {lora_id} loaded successfully")
-        except Exception as e:
-            gr.Warning(f"LoRA Error: {str(e)}")
-            gr.Info("Proceeding without LoRA")
-
-    # Move to GPU
-    pipe = pipe.enable_xformers_memory_efficient_attention()
-    pipe = pipe.to("cuda")
-    gr.Info(f"Load Model {model_id} and {lora_id} Success")
-    progress(1, desc="Model loaded successfully")
-    generate_imgs = gr.Button(interactive=True)
-    generated_imgs_with_tags = gr.Button()
-    clear_output()
-    if btn_check:
-        generated_imgs_with_tags = gr.Button(interactive=True)
-    return pipe, model_id, lora_id, generate_imgs, generated_imgs_with_tags
 
 def verify_token(): 
     stored_hash = b'$2b$12$o.DA9bq6AOg.jL4848kIvu5oy2K/2Qs35dWENbi/p8yDQQH2epmZy'
